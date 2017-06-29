@@ -24,7 +24,7 @@
 
 * Here blow is an example:
 
-    <img src = "NavicatInRegistry.png">
+    <img src = "NavicatInRegistry.PNG">
 
 ## 3. How does Navicat encrypt password?
 Navicat use blowfish algorithm to encrypt password string. Here below is what Navicat did:
