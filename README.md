@@ -55,3 +55,31 @@ Navicat use blowfish algorithm to encrypt password string. Here below is what Na
 
 ### 4. Store The Encrypted Password.
 * The encrypted password stored in Windows Registry is the join of hex strings of every cipher blocks.
+
+## 2. How to use the sample code.
+* Please make sure that you have `Python3`.
+* Please make sure that you have `blowfish` module if you just want to use `NavicatEncrypt.py`. You can install `blowfish` module by inputing command:
+    > pip install blowfish
+
+    to your Command Prompt.
+
+* Please make sure that you have 'pypiwin32' module if you want to use `NavicatEncrypt.py` and `ShowNavicat.py`. You can install 'pypiwin32' by inputing command:
+    > pip install pypiwin32
+
+    to your Command Prompt.
+
+* The following is a sample:
+    ~~~cmd
+    E:\GitHub\how-does-navicat-encrypt-password\Code>python
+    Python 3.6.1 (v3.6.1:69c0db5, Mar 21 2017, 18:41:36) [MSC v.1900 64 bit (AMD64)] on win32
+    Type "help", "copyright", "credits" or "license" for more information.
+    >>> import NavicatEncrypt
+
+    >>> NavicatEncrypt.Encrypt_Navicat(bytearray(b'This is a test')).hex().upper()
+    '0EA71F51DD37BFB60CCBA219BE3A'
+
+    >>> NavicatEncrypt.Decrypt_Navicat(bytearray.fromhex('0EA71F51DD37BFB60CCBA219BE3A')).decode('ascii')
+    'This is a test'
+    ~~~
+
+* You can just run `ShowNavicat.py` to get all of your database passwords that were stored by Navicat in Windows Registry.
