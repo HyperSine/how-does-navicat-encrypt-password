@@ -70,7 +70,7 @@ Navicat use blowfish algorithm to encrypt password string. Here below is what Na
 
 * The following is a sample:
     ~~~cmd
-    E:\GitHub\how-does-navicat-encrypt-password\Code>python
+    E:\GitHub\how-does-navicat-encrypt-password\python3>python
     Python 3.6.1 (v3.6.1:69c0db5, Mar 21 2017, 18:41:36) [MSC v.1900 64 bit (AMD64)] on win32
     Type "help", "copyright", "credits" or "license" for more information.
     >>> import NavicatEncrypt
