@@ -56,6 +56,30 @@ Navicat use blowfish algorithm to encrypt password string. Here below is what Na
 ### 4. Store The Encrypted Password.
 * The encrypted password stored in Windows Registry is the join of hex strings of every cipher blocks.
 
+### 5. Addition: Password Encryption In NCX file.
+#### 1. What is NCX file?
+  * NCX file is Navicat Connection eXport file. When you export your connections' configuration for backup, Navicat will generate it. If you choose to export passwords, the encrypted passwords will be stored in NCX file you get.
+
+#### 2. Encryption Algorithm.
+  * Navicat 11 and Navicat 12 use different algorithm to encrypt password.
+  * In Navicat 11, the encryption algorithm used is exactly the same with what I said before.
+  * In Navicat 12, the encryption algorithm is __AES128/CBC/PKCS7Padding__, where the key is:
+    ```cpp
+    unsigned char AES_Key[16] = {
+        'l', 'i', 'b', 'c', 'c', 'k', 'e', 'y',
+        'l', 'i', 'b', 'c', 'c', 'k', 'e', 'y'
+    };
+    ```
+
+    and initial vector is:
+
+    ```cpp
+    unsigned char AES_IV[16] = {
+        'l', 'i', 'b', 'c', 'c', 'i', 'v', ' ',
+        'l', 'i', 'b', 'c', 'c', 'i', 'v', ' '
+    };
+    ```
+
 ## 2. How to use the sample code.
 * Please make sure that you have `Python3`.
 * Please make sure that you have `blowfish` module if you just want to use `NavicatEncrypt.py`. You can install `blowfish` module by inputing command:
