@@ -1,5 +1,7 @@
 import winreg
-from NavicatEncrypt import *
+from NavicatCrypto import *
+
+NavicatCipher = Navicat11Crypto()
 
 try:
     #########################################################Show MySQL
@@ -16,7 +18,7 @@ try:
             print('Port:\t\t', winreg.QueryValueEx(Server_Key, 'Port')[0])
             print('Username:\t', winreg.QueryValueEx(Server_Key, 'Username')[0])
             Pwd = winreg.QueryValueEx(Server_Key, 'Pwd')[0]
-            print('Password:\t', '' if len(Pwd) == 0 else Decrypt_Navicat(bytearray.fromhex(Pwd)).decode('ascii'))
+            print('Password:\t', '' if len(Pwd) == 0 else NavicatCipher.DecryptString(Pwd))
 
             print('-' * 32)
             winreg.CloseKey(Server_Key)
@@ -40,7 +42,7 @@ try:
             print('Port:\t\t', winreg.QueryValueEx(Server_Key, 'Port')[0])
             print('Username:\t', winreg.QueryValueEx(Server_Key, 'Username')[0])
             Pwd = winreg.QueryValueEx(Server_Key, 'Pwd')[0]
-            print('Password:\t', '' if len(Pwd) == 0 else Decrypt_Navicat(bytearray.fromhex(Pwd)).decode('ascii'))
+            print('Password:\t', '' if len(Pwd) == 0 else NavicatCipher.DecryptString(Pwd))
 
             print('-' * 32)
             winreg.CloseKey(Server_Key)
@@ -64,7 +66,7 @@ try:
             print('Port:\t\t', winreg.QueryValueEx(Server_Key, 'Port')[0])
             print('Username:\t', winreg.QueryValueEx(Server_Key, 'Username')[0])
             Pwd = winreg.QueryValueEx(Server_Key, 'Pwd')[0]
-            print('Password:\t', '' if len(Pwd) == 0 else Decrypt_Navicat(bytearray.fromhex(Pwd)).decode('ascii'))
+            print('Password:\t', '' if len(Pwd) == 0 else NavicatCipher.DecryptString(Pwd))
 
             print('-' * 32)
             winreg.CloseKey(Server_Key)
@@ -89,7 +91,7 @@ try:
             print('InitialDatabase:\t', winreg.QueryValueEx(Server_Key, 'InitialDatabase')[0])
             print('Username:\t\t', winreg.QueryValueEx(Server_Key, 'Username')[0])
             Pwd = winreg.QueryValueEx(Server_Key, 'Pwd')[0]
-            print('Password:\t\t', '' if len(Pwd) == 0 else Decrypt_Navicat(bytearray.fromhex(Pwd)).decode('ascii'))
+            print('Password:\t\t', '' if len(Pwd) == 0 else NavicatCipher.DecryptString(Pwd))
 
             print('-' * 32)
             winreg.CloseKey(Server_Key)
@@ -114,7 +116,7 @@ try:
             print('InitialDatabase:\t', winreg.QueryValueEx(Server_Key, 'InitialDatabase')[0])
             print('Username:\t\t', winreg.QueryValueEx(Server_Key, 'Username')[0])
             Pwd = winreg.QueryValueEx(Server_Key, 'Pwd')[0]
-            print('Password:\t\t', '' if len(Pwd) == 0 else Decrypt_Navicat(bytearray.fromhex(Pwd)).decode('ascii'))
+            print('Password:\t\t', '' if len(Pwd) == 0 else NavicatCipher.DecryptString(Pwd))
 
             print('-' * 32)
             winreg.CloseKey(Server_Key)
