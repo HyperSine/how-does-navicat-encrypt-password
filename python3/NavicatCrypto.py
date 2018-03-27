@@ -30,8 +30,8 @@ def XorBytesByLength(a : bytes, b : bytes, length : int):
 
 class Navicat11Crypto:
 
-    def __init__(self):
-        self.Key = hashlib.sha1(b'3DC5CA39').digest()
+    def __init__(self, key = b'3DC5CA39'):
+        self.Key = hashlib.sha1(key).digest()
         self.Cipher = blowfish.Cipher(self.Key)
         self.IV = self.Cipher.encrypt_block(b'\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF')
 
