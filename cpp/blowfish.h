@@ -18,21 +18,21 @@
 extern "C" {
 #endif
 
-    typedef struct _BLOWFISH_KEY {
+    typedef struct _ACCEL_BLOWFISH_KEY {
         uint32_t SubKey[18];
         uint32_t SBox[4][256];
-    } BLOWFISH_KEY;
+    } ACCEL_BLOWFISH_KEY;
 
-    void accelc_Blowfish_encrypt(uint8_t srcBytes[8],
-                                 const BLOWFISH_KEY* srcKey,
-                                 int Endian);
+    void accel_Blowfish_encrypt(uint8_t srcBytes[8],
+                                const ACCEL_BLOWFISH_KEY* srcKey,
+                                int Endian);
 
-    void accelc_Blowfish_decrypt(uint8_t srcBytes[8],
-                                 const BLOWFISH_KEY* srcKey,
-                                 int Endian);
+    void accel_Blowfish_decrypt(uint8_t srcBytes[8],
+                                const ACCEL_BLOWFISH_KEY* srcKey,
+                                int Endian);
 
-    int accelc_Blowfish_set_key(const uint8_t srcUserKey[], uint8_t UserKeyLength,
-                                BLOWFISH_KEY* dstKey);
+    int accel_Blowfish_set_key(const uint8_t srcUserKey[], uint8_t UserKeyLength,
+                               ACCEL_BLOWFISH_KEY* dstKey);
 
 #if defined(__cplusplus)
 }

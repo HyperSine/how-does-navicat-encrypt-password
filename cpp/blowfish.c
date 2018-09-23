@@ -8,13 +8,13 @@
 #include <x86intrin.h>
 #endif
 
-const uint32_t accelc_Blowfish_Original_PBox[18] = {
+const uint32_t accel_Blowfish_OriginalPBox[18] = {
     0x243F6A88, 0x85A308D3, 0x13198A2E, 0x03707344, 0xA4093822, 0x299F31D0,
     0x082EFA98, 0xEC4E6C89, 0x452821E6, 0x38D01377, 0xBE5466CF, 0x34E90C6C,
     0xC0AC29B7, 0xC97C50DD, 0x3F84D5B5, 0xB5470917, 0x9216D5D9, 0x8979FB1B
 };
 
-const uint32_t accelc_Blowfish_Original_SBox[4][256] = {
+const uint32_t accel_Blowfish_OriginalSBox[4][256] = {
     {
         0xD1310BA6, 0x98DFB5AC, 0x2FFD72DB, 0xD01ADFB7, 0xB8E1AFED, 0x6A267E96, 0xBA7C9045, 0xF12C7F99, 0x24A19947, 0xB3916CF7, 0x0801F2E2, 0x858EFC16, 0x636920D8, 0x71574E69, 0xA458FEA3, 0xF4933D7E,
         0x0D95748F, 0x728EB658, 0x718BCD58, 0x82154AEE, 0x7B54A41D, 0xC25A59B5, 0x9C30D539, 0x2AF26013, 0xC5D1B023, 0x286085F0, 0xCA417918, 0xB8DB38EF, 0x8E79DCB0, 0x603A180E, 0x6C9E0E8B, 0xB01E8A3E,
@@ -94,9 +94,9 @@ const uint32_t accelc_Blowfish_Original_SBox[4][256] = {
 
 #define f_transform(_x, _S) ((((_S)[0][(_x)[3]] + (_S)[1][(_x)[2]]) ^ (_S)[2][(_x)[1]]) + (_S)[3][(_x)[0]])
 
-void accelc_Blowfish_encrypt(uint8_t srcBytes[8],
-                             const BLOWFISH_KEY* srcKey,
-                             int Endian) {
+void accel_Blowfish_encrypt(uint8_t srcBytes[8],
+                            const ACCEL_BLOWFISH_KEY* srcKey,
+                            int Endian) {
     uint32_t* const L = (uint32_t*)srcBytes;
     uint32_t* const R = (uint32_t*)(srcBytes + 4);
 
@@ -166,9 +166,9 @@ void accelc_Blowfish_encrypt(uint8_t srcBytes[8],
     }
 }
 
-void accelc_Blowfish_decrypt(uint8_t srcBytes[8],
-                             const BLOWFISH_KEY* srcKey,
-                             int Endian) {
+void accel_Blowfish_decrypt(uint8_t srcBytes[8],
+                            const ACCEL_BLOWFISH_KEY* srcKey,
+                            int Endian) {
     uint32_t* const L = (uint32_t*)srcBytes;
     uint32_t* const R = (uint32_t*)(srcBytes + 4);
 
@@ -238,15 +238,15 @@ void accelc_Blowfish_decrypt(uint8_t srcBytes[8],
     }
 }
 
-int accelc_Blowfish_set_key(const uint8_t srcUserKey[], uint8_t UserKeyLength,
-                            BLOWFISH_KEY* dstKey) {
+int accel_Blowfish_set_key(const uint8_t srcUserKey[], uint8_t UserKeyLength,
+                           ACCEL_BLOWFISH_KEY* dstKey) {
     if (UserKeyLength == 0)
         return STATUS_BLOWFISH_INVALID_KEY_LENGTH;
     if (UserKeyLength > BLOWFISH_MAX_KEY_LENGTH)
         return STATUS_BLOWFISH_KEY_TOO_LONG;
 
-    memcpy(dstKey->SubKey, accelc_Blowfish_Original_PBox, sizeof(accelc_Blowfish_Original_PBox));
-    memcpy(dstKey->SBox, accelc_Blowfish_Original_SBox, sizeof(accelc_Blowfish_Original_SBox));
+    memcpy(dstKey->SubKey, accel_Blowfish_OriginalPBox, sizeof(accel_Blowfish_OriginalPBox));
+    memcpy(dstKey->SBox, accel_Blowfish_OriginalSBox, sizeof(accel_Blowfish_OriginalSBox));
 
     for (int i = 0; i < 18; ++i) {
         uint32_t temp = 0;
@@ -268,12 +268,12 @@ int accelc_Blowfish_set_key(const uint8_t srcUserKey[], uint8_t UserKeyLength,
 
     uint8_t temp[8] = { 0 };
     for (int i = 0; i < 9; ++i) {
-        accelc_Blowfish_encrypt(temp, dstKey, BLOWFISH_LITTLE_ENDIAN);
+        accel_Blowfish_encrypt(temp, dstKey, BLOWFISH_LITTLE_ENDIAN);
         ((uint64_t*)dstKey->SubKey)[i] = *(uint64_t*)temp;
     }
 
     for (int i = 0; i < 512; ++i) {
-        accelc_Blowfish_encrypt(temp, dstKey, BLOWFISH_LITTLE_ENDIAN);
+        accel_Blowfish_encrypt(temp, dstKey, BLOWFISH_LITTLE_ENDIAN);
         ((uint64_t*)dstKey->SBox)[i] = *(uint64_t*)temp;
     }
 

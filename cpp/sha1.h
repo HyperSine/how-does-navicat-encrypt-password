@@ -6,23 +6,28 @@
 extern "C" {
 #endif
 
-    typedef struct _SHA1_DIGEST {
+    typedef struct _ACCEL_SHA1_DIGEST {
         union {
             uint8_t byte[20];
             uint32_t dword[5];
         };
-    } SHA1_DIGEST, SHA1_BUFFER;
+    } ACCEL_SHA1_DIGEST, ACCEL_SHA1_BUFFER;
     
-    void accelc_SHA1_init(SHA1_BUFFER* HashBuffer);
+    void accel_SHA1_init(ACCEL_SHA1_BUFFER* HashBuffer);
 
-    void accelc_SHA1_update(const void* __restrict srcBytes, size_t srcBytesLength, 
-                            SHA1_BUFFER* __restrict HashBuffer);
+    // srcBytesLength must be a multiple of 64.
+    void accel_SHA1_update(const void* __restrict srcBytes, 
+                           size_t srcBytesLength, 
+                           ACCEL_SHA1_BUFFER* __restrict HashBuffer);
 
-    void accelc_SHA1_final(const void* __restrict LeftBytes, size_t LeftBytesLength, uint64_t TotalBytesLength,
-                           const SHA1_BUFFER* HashBuffer, SHA1_DIGEST* Hash);
+    void accel_SHA1_final(const void* __restrict LeftBytes, 
+                          size_t LeftBytesLength, 
+                          uint64_t TotalBytesLength,
+                          const ACCEL_SHA1_BUFFER* HashBuffer, ACCEL_SHA1_DIGEST* Hash);
 
-    void accelc_SHA1(const void* __restrict srcBytes, size_t srclen,
-                     SHA1_DIGEST* __restrict Hash);
+    void accel_SHA1(const void* __restrict srcBytes, 
+                    size_t srclen,
+                    ACCEL_SHA1_DIGEST* __restrict Hash);
 
 #if defined(__cplusplus)
 }

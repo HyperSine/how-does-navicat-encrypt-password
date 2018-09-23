@@ -4,10 +4,11 @@
 #include "sha1.h"
 
 #include <vector>
+#include <string>
 
 class Navicat11Crypto {
 protected:
-    BLOWFISH_KEY BlowfishKey;
+    ACCEL_BLOWFISH_KEY BlowfishKey;
 
     void BytesToHex(const void* src, size_t len, char* dst) {
         for (size_t i = 0; i < len; ++i) {
@@ -54,39 +55,18 @@ protected:
         }
     }
 
-public:
+    std::string EncryptString(const void* srcBytes, size_t srclen) {
+        std::string ret;
 
-    Navicat11Crypto() {
-        const uint8_t DefaultKey[8] = {
-            '3', 'D', 'C', '5', 'C', 'A', '3', '9'
-        };
-        SHA1_DIGEST KeyHash;
-        accelc_SHA1(DefaultKey, sizeof(DefaultKey), &KeyHash);
-        accelc_Blowfish_set_key(KeyHash.byte, sizeof(KeyHash), &BlowfishKey);
-    }
-
-    Navicat11Crypto(const void* srcBytes, size_t srclen) {
-        if (srclen == 0)
-            srclen = BLOWFISH_MIN_KEY_LENGTH;
-        if (srclen > BLOWFISH_MAX_KEY_LENGTH)
-            srclen = BLOWFISH_MAX_KEY_LENGTH;
-        SHA1_DIGEST KeyHash;
-        accelc_SHA1(srcBytes, srclen, &KeyHash);
-        accelc_Blowfish_set_key(KeyHash.byte, sizeof(KeyHash), &BlowfishKey);
-    }
-
-    std::vector<char> EncryptString(const void* srcBytes, size_t srclen) {
-        std::vector<char> ret;
         if (srclen == 0)
             return ret;
 
-        ret.resize(srclen * 2 + 1);
-        ret[srclen * 2] = 0;
+        ret.resize(srclen * 2);
 
-        uint8_t CV[BLOWFISH_BLOCK_SIZE] = { 
-            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff 
+        uint8_t CV[BLOWFISH_BLOCK_SIZE] = {
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
         };
-        accelc_Blowfish_encrypt(CV, &BlowfishKey, BLOWFISH_BIG_ENDIAN);
+        accel_Blowfish_encrypt(CV, &BlowfishKey, BLOWFISH_BIG_ENDIAN);
 
         const uint64_t* blocks = reinterpret_cast<const uint64_t*>(srcBytes);
         size_t blocks_len = srclen / BLOWFISH_BLOCK_SIZE;
@@ -98,15 +78,15 @@ public:
 
             temp.qword = blocks[i];
             temp.qword ^= *reinterpret_cast<uint64_t*>(CV);
-            accelc_Blowfish_encrypt(temp.byte, &BlowfishKey, BLOWFISH_BIG_ENDIAN);
+            accel_Blowfish_encrypt(temp.byte, &BlowfishKey, BLOWFISH_BIG_ENDIAN);
             *reinterpret_cast<uint64_t*>(CV) ^= temp.qword;
 
             BytesToHex(temp.byte, 8, ret.data() + 16 * i);
         }
-        
+
         if (srclen % BLOWFISH_BLOCK_SIZE) {
-            accelc_Blowfish_encrypt(CV, &BlowfishKey, BLOWFISH_BIG_ENDIAN);
-            for (size_t i = 0; i < srclen % BLOWFISH_BLOCK_SIZE; ++i) 
+            accel_Blowfish_encrypt(CV, &BlowfishKey, BLOWFISH_BIG_ENDIAN);
+            for (size_t i = 0; i < srclen % BLOWFISH_BLOCK_SIZE; ++i)
                 CV[i] ^= reinterpret_cast<const uint8_t*>(blocks + blocks_len)[i];
             BytesToHex(CV, srclen % BLOWFISH_BLOCK_SIZE, ret.data() + 16 * blocks_len);
         }
@@ -114,18 +94,20 @@ public:
         return ret;
     }
 
-    std::vector<uint8_t> DecryptString(const char* srchex, size_t srclen) {
-        std::vector<uint8_t> ret;
+    std::string DecryptString(const char* srchex, size_t srclen) {
+        std::string ret;
+
         if (CheckHex(srchex, srclen) == false)
             return ret;
 
         ret.resize(srclen / 2);
+
         uint8_t CV[BLOWFISH_BLOCK_SIZE] = {
             0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
         };
-        accelc_Blowfish_encrypt(CV, &BlowfishKey, BLOWFISH_BIG_ENDIAN);
+        accel_Blowfish_encrypt(CV, &BlowfishKey, BLOWFISH_BIG_ENDIAN);
 
-        const char (*blocks)[16] = reinterpret_cast<const char (*)[16]>(srchex);
+        const char(*blocks)[16] = reinterpret_cast<const char(*)[16]>(srchex);
         size_t blocks_len = srclen / 16;
         for (size_t i = 0; i < blocks_len; ++i) {
             union {
@@ -135,7 +117,7 @@ public:
 
             HexToBytes(blocks[i], 16, temp.byte);
             std::memcpy(temp2.byte, temp.byte, 8);
-            accelc_Blowfish_decrypt(temp.byte, &BlowfishKey, BLOWFISH_BIG_ENDIAN);
+            accel_Blowfish_decrypt(temp.byte, &BlowfishKey, BLOWFISH_BIG_ENDIAN);
             temp.qword ^= *reinterpret_cast<uint64_t*>(CV);
             *reinterpret_cast<uint64_t*>(ret.data() + 8 * i) = temp.qword;
             *reinterpret_cast<uint64_t*>(CV) ^= temp2.qword;
@@ -148,7 +130,7 @@ public:
             } temp = { };
             HexToBytes(blocks[blocks_len], srclen % 16, temp.byte);
 
-            accelc_Blowfish_encrypt(CV, &BlowfishKey, BLOWFISH_BIG_ENDIAN);
+            accel_Blowfish_encrypt(CV, &BlowfishKey, BLOWFISH_BIG_ENDIAN);
             for (size_t i = 0; i < (srclen % 16) / 2; ++i)
                 ret[blocks_len * 8 + i] = temp.byte[i] ^ CV[i];
         }
@@ -156,40 +138,45 @@ public:
         return ret;
     }
 
+public:
+
+    Navicat11Crypto() {
+        const uint8_t DefaultKey[8] = {
+            '3', 'D', 'C', '5', 'C', 'A', '3', '9'
+        };
+        ACCEL_SHA1_DIGEST KeyHash;
+        accel_SHA1(DefaultKey, sizeof(DefaultKey), &KeyHash);
+        accel_Blowfish_set_key(KeyHash.byte, sizeof(KeyHash), &BlowfishKey);
+    }
+
+    Navicat11Crypto(const void* srcBytes, size_t srclen) {
+        ACCEL_SHA1_DIGEST KeyHash;
+        accel_SHA1(srcBytes, srclen, &KeyHash);
+        accel_Blowfish_set_key(KeyHash.byte, sizeof(KeyHash), &BlowfishKey);
+    }
+
+    std::string EncryptString(const std::string& str) {
+        return EncryptString(str.c_str(), str.length());
+    }
+    
+    std::string DecryptString(const std::string& str) {
+        return DecryptString(str.c_str(), str.length());
+    }
+
 };
 
 class Navicat12Crypto : public Navicat11Crypto {
 protected:
-    AES_KEY AES128Key;
+    ACCEL_AES_KEY AES128Key;
 
+    std::string EncryptStringForNCX(const void* srcBytes, size_t srclen) {
+        std::string ret;
 
-
-public:
-
-    Navicat12Crypto() : Navicat11Crypto() {
-        uint8_t DefaultKey[16] = {
-            'l', 'i', 'b', 'c', 'c', 'k', 'e', 'y',
-            'l', 'i', 'b', 'c', 'c', 'k', 'e', 'y'
-        };
-        accelc_AES128_set_key(DefaultKey, &AES128Key);
-    }
-
-    Navicat12Crypto(const void* srcBytes, size_t srclen) : 
-        Navicat11Crypto(srcBytes, srclen)  {
-    
-        uint8_t DefaultKey[16] = {
-            'l', 'i', 'b', 'c', 'c', 'k', 'e', 'y',
-            'l', 'i', 'b', 'c', 'c', 'k', 'e', 'y'
-        };
-        accelc_AES128_set_key(DefaultKey, &AES128Key);
-    }
-
-    std::vector<char> EncryptString(const void* srcBytes, size_t srclen) {
-        std::vector<char> ret;
         if (srclen == 0)
             return ret;
 
         ret.resize((srclen / AES_BLOCK_SIZE + 1) * AES_BLOCK_SIZE * 2);
+
         union {
             uint8_t byte[AES_BLOCK_SIZE];
             uint64_t qword[2];
@@ -209,7 +196,7 @@ public:
             std::memcpy(temp.byte, blocks[i], AES_BLOCK_SIZE);
             temp.qword[0] ^= CV.qword[0];
             temp.qword[1] ^= CV.qword[1];
-            accelc_AES128_encrypt(temp.byte, &AES128Key);
+            accel_AES128_encrypt(temp.byte, &AES128Key);
             BytesToHex(temp.byte, AES_BLOCK_SIZE, ret.data() + 2 * AES_BLOCK_SIZE * i);
             CV.qword[0] = temp.qword[0];
             CV.qword[1] = temp.qword[1];
@@ -227,14 +214,15 @@ public:
 
         temp.qword[0] ^= CV.qword[0];
         temp.qword[1] ^= CV.qword[1];
-        accelc_AES128_encrypt(temp.byte, &AES128Key);
+        accel_AES128_encrypt(temp.byte, &AES128Key);
         BytesToHex(temp.byte, AES_BLOCK_SIZE, ret.data() + 2 * AES_BLOCK_SIZE * blocks_len);
 
         return ret;
     }
 
-    std::vector<uint8_t> DecryptString(const char* srchex, size_t srclen) {
-        std::vector<uint8_t> ret;
+    std::string DecryptStringForNCX(const char* srchex, size_t srclen) {
+        std::string ret;
+
         if (srclen % (2 * AES_BLOCK_SIZE) != 0 || CheckHex(srchex, srclen) == false)
             return ret;
 
@@ -248,8 +236,8 @@ public:
             'l', 'i', 'b', 'c', 'c', 'i', 'v', ' '
         };
 
-        const char (*blocks)[2 * AES_BLOCK_SIZE] = reinterpret_cast<const char(*)[2 * AES_BLOCK_SIZE]>(srchex);
-        size_t blocks_len = srclen / (2 * AES_BLOCK_SIZE);
+        const char(*blocks)[2 * AES_BLOCK_SIZE] = reinterpret_cast<const char(*)[2 * AES_BLOCK_SIZE]>(srchex);
+        size_t blocks_len = srclen / (2 * AES_BLOCK_SIZE) - 1;
         for (size_t i = 0; i < blocks_len; ++i) {
             union {
                 uint8_t byte[AES_BLOCK_SIZE];
@@ -258,7 +246,7 @@ public:
 
             HexToBytes(blocks[i], 2 * AES_BLOCK_SIZE, temp.byte);
             std::memcpy(NextVector.byte, temp.byte, AES_BLOCK_SIZE);
-            accelc_AES128_decrypt(temp.byte, &AES128Key);
+            accel_AES128_decrypt(temp.byte, &AES128Key);
             temp.qword[0] ^= CV.qword[0];
             temp.qword[1] ^= CV.qword[1];
 
@@ -271,24 +259,51 @@ public:
             uint64_t qword[2];
         } temp;
         HexToBytes(blocks[blocks_len], 2 * AES_BLOCK_SIZE, temp.byte);
-        accelc_AES128_decrypt(temp.byte, &AES128Key);
+        accel_AES128_decrypt(temp.byte, &AES128Key);
         temp.qword[0] ^= CV.qword[0];
         temp.qword[1] ^= CV.qword[1];
 
         if (temp.byte[AES_BLOCK_SIZE - 1] > AES_BLOCK_SIZE) {
             ret.clear();
             return ret;
-        } else {
-            uint8_t padding = temp.byte[AES_BLOCK_SIZE - 1];
-            for (size_t i = AES_BLOCK_SIZE - padding; i < AES_BLOCK_SIZE; ++i) 
-                if (temp.byte[i] != padding) {
-                    ret.clear();
-                    return ret;
-                }
-            for (size_t i = 0; i < AES_BLOCK_SIZE - padding; ++i)
-                ret.emplace_back(temp.byte[i]);
         }
 
+        uint8_t padding = temp.byte[AES_BLOCK_SIZE - 1];
+        for (size_t i = AES_BLOCK_SIZE - padding; i < AES_BLOCK_SIZE; ++i)
+            if (temp.byte[i] != padding) {
+                ret.clear();
+                return ret;
+            }
+
+        ret.append(reinterpret_cast<char*>(temp.byte), AES_BLOCK_SIZE - padding);
         return ret;
+    }
+
+public:
+
+    Navicat12Crypto() : Navicat11Crypto() {
+        uint8_t DefaultKey[16] = {
+            'l', 'i', 'b', 'c', 'c', 'k', 'e', 'y',
+            'l', 'i', 'b', 'c', 'c', 'k', 'e', 'y'
+        };
+        accel_AES128_set_key(DefaultKey, &AES128Key);
+    }
+
+    Navicat12Crypto(const void* srcBytes, size_t srclen) : 
+        Navicat11Crypto(srcBytes, srclen)  {
+    
+        uint8_t DefaultKey[16] = {
+            'l', 'i', 'b', 'c', 'c', 'k', 'e', 'y',
+            'l', 'i', 'b', 'c', 'c', 'k', 'e', 'y'
+        };
+        accel_AES128_set_key(DefaultKey, &AES128Key);
+    }
+
+    std::string EncryptStringForNCX(const std::string& str) {
+        return EncryptStringForNCX(str.c_str(), str.length());
+    }
+
+    std::string DecryptStringForNCX(const std::string& str) {
+        return DecryptStringForNCX(str.c_str(), str.length());
     }
 };
