@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import sys, xml.etree.ElementTree
 from Crypto.Cipher import AES, Blowfish
 from Crypto.Hash import SHA1
@@ -116,7 +117,7 @@ if __name__ == '__main__':
         exit(0)
 
     cipher = Navicat12Crypto()
-    xmlFile = xml.etree.ElementTree.parse('C:\\Users\\DoubleSine\\Desktop\\xshellConfig\\mysql\\connections.ncx')
+    xmlFile = xml.etree.ElementTree.parse(sys.argv[1])
     Connections = xmlFile.getroot()
     for Connection in Connections:
         assert(Connection.tag == 'Connection')
