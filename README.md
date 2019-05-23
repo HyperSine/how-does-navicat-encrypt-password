@@ -18,6 +18,7 @@
     |-------------|-------------------------------------------------------------------------------------------|
     |MySQL        |HKEY_CURRENT_USER\\Software\\PremiumSoft\\Navicat\\Servers\\`<your connection name>`       |
     |MariaDB      |HKEY_CURRENT_USER\\Software\\PremiumSoft\\NavicatMARIADB\\Servers\\`<your connection name>`|
+    |MongoDB      |HKEY_CURRENT_USER\\Software\\PremiumSoft\\NavicatMONGODB\\Servers\\`<your connection name>`|
     |Microsoft SQL|HKEY_CURRENT_USER\\Software\\PremiumSoft\\NavicatMSSQL\\Servers\\`<your connection name>`  |
     |Oracle       |HKEY_CURRENT_USER\\Software\\PremiumSoft\\NavicatOra\\Servers\\`<your connection name>`    |
     |PostgreSQL   |HKEY_CURRENT_USER\\Software\\PremiumSoft\\NavicatPG\\Servers\\`<your connection name>`     |
@@ -101,60 +102,144 @@ Navicat use blowfish algorithm to encrypt password string. Here below is what Na
     };
     ```
 
-## 2. How to use the sample code.
-  * Please make sure that you have `Python3`.
+## 2. How to use the sample code in python3 folder?
 
-  * Please make sure that you have `blowfish`, `pycryptodome` module if you want to use `NavicatCrypto.py` and `NavicatCryptoHelper.py`. You can install `blowfish` and `pycryptodome` module by command:
+* Please make sure that you have `Python3`.
 
-    ```cmd
-    pip install blowfish
-    ```
+* Please make sure that you have `pycryptodome` module if you want to use `NavicatCipher.py` and `NcxReader.py`.
 
-  * Please make sure that you have 'pypiwin32' module if you want to use `ShowNavicat.py`. You can install 'pypiwin32' by command:
+  You can install `pycryptodome` module by command:
 
-    ```cmd
-    pip install pypiwin32
-    ```
+  ```console
+  $ pip install pycryptodome
+  ```
 
-  * The following is a sample:
+* Please make sure that you have `pypiwin32` module if you want to use `ShowNavicat.py`.
 
-    1. __NavicatCrypto.py__
+  You can install `pypiwin32` module by command:
 
-       ~~~powershell
-       PS E:\GitHub\how-does-navicat-encrypt-password\python3> python
-       Python 3.6.3 (v3.6.3:2c5fed8, Oct  3 2017, 18:11:49) [MSC v.1900 64 bit (AMD64)] on win32
-       Type "help", "copyright", "credits" or "license" for more information.
-       >>> from NavicatCrypto import *
-       >>> cipher = Navicat11Crypto()
-       >>> cipher.EncryptString('This is a test')
-       '0EA71F51DD37BFB60CCBA219BE3A'
-       >>> cipher.DecryptString('0EA71F51DD37BFB60CCBA219BE3A')
-       'This is a test'
-       >>> cipher2 = Navicat12Crypto()
-       >>> cipher2.EncryptStringForNCX('This is a test')
-       'B75D320B6211468D63EB3B67C9E85933'
-       >>> cipher2.DecryptStringForNCX('B75D320B6211468D63EB3B67C9E85933')
-       'This is a test'
-       >>>
+  ```console
+  $ pip install pypiwin32
+  ```
 
-       ~~~
+1. __NavicatCipher.py__
 
-    2. __NavicatCryptoHelper.py__
+   ```
+   Usage:
+       NavicatCrypto.py <enc|dec> [-ncx] <plaintext|ciphertext>
 
-       ```powershell
-       PS E:\GitHub\how-does-navicat-encrypt-password\python3> .\NavicatCryptoHelper.py -e "This is a test"
-       0EA71F51DD37BFB60CCBA219BE3A
+       <enc|dec>                "enc" for encryption, "dec" for decryption.
+                                This parameter must be specified.
 
-       PS E:\GitHub\how-does-navicat-encrypt-password\python3> .\NavicatCryptoHelper.py -d "0EA71F51DD37BFB60CCBA219BE3A"
-       This is a test
+       [-ncx]                   Indicate that plaintext/ciphertext is
+                                prepared for/exported from NCX file.
+                                This parameter is optional.
 
-       PS E:\GitHub\how-does-navicat-encrypt-password\python3> .\NavicatCryptoHelper.py -e -ncx "This is a test"
-       B75D320B6211468D63EB3B67C9E85933
+       <plaintext|ciphertext>   Plaintext string or ciphertext string.
+                                NOTICE: Ciphertext string must be a hex string.
+                                This parameter must be specified.
+   ```
 
-       PS E:\GitHub\how-does-navicat-encrypt-password\python3> .\NavicatCryptoHelper.py -d -ncx "B75D320B6211468D63EB3B67C9E85933"
-       This is a test
+   __Example:__
 
-       PS E:\GitHub\how-does-navicat-encrypt-password\python3>
-       ```
+   ```console
+   $ ./NavicatCipher.py enc "This is a test"
+   0EA71F51DD37BFB60CCBA219BE3A
 
-  * You can just run `ShowNavicat.py` to get all of your database passwords that were stored by Navicat in Windows Registry.
+   $ ./NavicatCipher.py dec 0EA71F51DD37BFB60CCBA219BE3A
+   This is a test
+
+   $ ./NavicatCipher.py enc -ncx "This is a test"
+   B75D320B6211468D63EB3B67C9E85933
+
+   $ ./NavicatCipher.py dec -ncx B75D320B6211468D63EB3B67C9E85933
+   This is a test
+
+   $ python3
+   Python 3.6.7 (default, Oct 22 2018, 11:32:17)
+   [GCC 8.2.0] on linux
+   Type "help", "copyright", "credits" or "license" for more information.
+   >>> from NavicatCipher import *
+   >>> cipher = Navicat12Crypto()
+   >>> cipher.EncryptString('This is a test')
+   '0EA71F51DD37BFB60CCBA219BE3A'
+
+   >>> cipher.DecryptString('0EA71F51DD37BFB60CCBA219BE3A')
+   'This is a test'
+
+   >>> cipher.EncryptStringForNCX('This is a test')
+   'B75D320B6211468D63EB3B67C9E85933'
+
+   >>> cipher.DecryptStringForNCX('B75D320B6211468D63EB3B67C9E85933')
+   'This is a test'
+   ```
+
+2. __NcxReader.py__
+
+   Show DB servers' information inside `*.ncx` file.
+
+   ```
+   Usage:
+       NcxReader.py <Path to ncx file>
+   ```
+
+   __Example:__
+
+   ```console
+   $ ./NcxReader ~/connectioms.ncx
+   -----------------xxxxxxxxxxxx--------------------
+   Connection Type  = MYSQL
+   Host             = localhost
+   Port             = 3306
+   UserName         = root
+   Password         = 12345678
+
+   ------------------yyyyyyyyyy---------------------
+   Connection Type  = MYSQL
+   Host             = example.com
+   Port             = 3306
+   UserName         = server
+   Password         = 0000000000
+
+   ...
+   ...
+   ...
+   ```
+
+3. __ShowNavicat.py__
+
+   Just run it in Windows. It will list all Navicat configurations inside Windows Registry.
+
+   __Example:__
+
+   ```console
+   >ShowNavicat.py
+   +--------------------------------------------------+
+   |                   MySQL Server                   |
+   +--------------------------------------------------+
+
+   Host:              example.com
+   Port:              3306
+   Username:          server
+   Password:          0000000000
+
+   ...
+   ...
+
+   +--------------------------------------------------+
+   |                  MariaDB Server                  |
+   +--------------------------------------------------+
+
+   ...
+   ...
+
+   +--------------------------------------------------+
+   |                  MongoDB Server                  |
+   +--------------------------------------------------+
+
+   ...
+   ...
+
+   ...
+   ...
+   ```

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import sys, xml.etree.ElementTree
+import sys
 from Crypto.Hash import SHA1
 from Crypto.Cipher import AES, Blowfish
 
@@ -79,48 +79,45 @@ class Navicat12Crypto(Navicat11Crypto):
         padded_plaintext = cipher.decrypt(bytes.fromhex(s))
         return Navicat12Crypto._Pkcs7Unpadding(padded_plaintext).decode('utf-8')
 
-def TryDecrypt(cipher, s):
-    try:
-        return cipher.DecryptString(s)
-    except:
-        pass
+if __name__ == '__main__':
 
-    try:
-        return cipher.DecryptStringForNCX(s)
-    except:
-        pass
-    
-    raise ValueError('Decryption failed!')
+    def Help():
+        print('Usage:')
+        print('    NavicatCrypto.py <enc|dec> [-ncx] <plaintext|ciphertext>')
+        print('')
+        print('    <enc|dec>                "enc" for encryption, "dec" for decryption.')
+        print('                             This parameter must be specified.')
+        print('')
+        print('    [-ncx]                   Indicate that plaintext/ciphertext is')
+        print('                             prepared for/exported from NCX file.')
+        print('                             This parameter is optional.')
+        print('')
+        print('    <plaintext|ciphertext>   Plaintext string or ciphertext string.')
+        print('                             NOTICE: Ciphertext string must be a hex string.')
+        print('                             This parameter must be specified.')
+        print('')
 
-def Help():
-    print('Usage:')
-    print('    NcxReader.py <Path to ncx file>')
-    print()
-
-def Main(argc : int, argv : list):
-    if argc != 2:
-        Help()
+    def Main(argc : int, argv : list):
+        if argc == 3:
+            if argv[1].lower() == 'enc':
+                print(Navicat11Crypto().EncryptString(argv[2]))
+            elif argv[1].lower() == 'dec':
+                print(Navicat11Crypto().DecryptString(argv[2]))
+            else:
+                Help()
+                return -1
+        elif argc == 4:
+            if argv[1].lower() == 'enc' and argv[2].lower() == '-ncx':
+                print(Navicat12Crypto().EncryptStringForNCX(argv[3]))
+            elif argv[1].lower() == 'dec' and argv[2].lower() == '-ncx':
+                print(Navicat12Crypto().DecryptStringForNCX(argv[3]))
+            else:
+                Help()
+                return -1
+        else:
+            Help()
+        
         return 0
-    else:
-        cipher = Navicat12Crypto()
-        xmlFile = xml.etree.ElementTree.parse(argv[1])
-        conns = xmlFile.getroot()
-        for conn in conns:
-            assert(conn.tag == 'Connection')
 
-            print(conn.attrib['ConnectionName'].center(50, '-'))
-            print('%-16s = %s' % ('Connection Type', conn.attrib['ConnType']))
-            print('%-16s = %s' % ('Host', conn.attrib['Host']))
-            print('%-16s = %s' % ('Port', conn.attrib['Port']))
-            print('%-16s = %s' % ('UserName', conn.attrib['UserName']))
-            print('%-16s = %s' % ('Password', TryDecrypt(cipher, conn.attrib['Password'])))
-
-            if (conn.attrib['SSH'].lower() != 'false'):
-                print('%-16s = %s' % ('SSH Host', conn.attrib['SSH_Host']))
-                print('%-16s = %s' % ('SSH Port', conn.attrib['SSH_Port']))
-                print('%-16s = %s' % ('SSH UserName', conn.attrib['SSH_UserName']))
-                print('%-16s = %s' % ('SSH Password', TryDecrypt(cipher, conn.attrib['SSH_Password'])))
-            print()
-
-exit(Main(len(sys.argv), sys.argv))
+    exit(Main(len(sys.argv), sys.argv))
 
