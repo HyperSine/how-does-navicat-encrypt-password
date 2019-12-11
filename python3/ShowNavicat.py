@@ -8,39 +8,36 @@ if platform.system().lower() != 'windows':
 import sys, winreg
 from Crypto.Hash import SHA1
 from Crypto.Cipher import AES, Blowfish
+from Crypto.Util import strxor
 
 #
 # Navicat12Crypto is not needed
 #
 class Navicat11Crypto:
 
-    @staticmethod
-    def _XorBytes(a : bytes, b : bytes):
-        return bytes([ i ^ j for i, j in zip(a, b) ])
-
     def __init__(self, Key = b'3DC5CA39'):
-        self._CipherKey = SHA1.new(Key).digest()
-        self._Cipher = Blowfish.new(self._CipherKey, Blowfish.MODE_ECB)
+        self._Key = SHA1.new(Key).digest()
+        self._Cipher = Blowfish.new(self._Key, Blowfish.MODE_ECB)
         self._IV = self._Cipher.encrypt(b'\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF')
 
     def EncryptString(self, s : str):
         if type(s) != str:
             raise TypeError('Parameter s must be a str.')
         else:
-            plaintext = s.encode('utf-8')
+            plaintext = s.encode('ascii')
             ciphertext = b''
             cv = self._IV
             full_round, left_length = divmod(len(plaintext), 8)
 
             for i in range(0, full_round * 8, 8):
-                t = Navicat11Crypto._XorBytes(plaintext[i:i + 8], cv)
+                t = strxor.strxor(plaintext[i:i + 8], cv)
                 t = self._Cipher.encrypt(t)
-                cv = Navicat11Crypto._XorBytes(cv, t)
+                cv = strxor.strxor(cv, t)
                 ciphertext += t
             
             if left_length != 0:
                 cv = self._Cipher.encrypt(cv)
-                ciphertext += Navicat11Crypto._XorBytes(plaintext[8 * full_round:], cv[:left_length])
+                ciphertext += strxor.strxor(plaintext[8 * full_round:], cv[:left_length])
 
             return ciphertext.hex().upper()
 
@@ -55,15 +52,15 @@ class Navicat11Crypto:
 
             for i in range(0, full_round * 8, 8):
                 t = self._Cipher.decrypt(ciphertext[i:i + 8])
-                t = Navicat11Crypto._XorBytes(t, cv)
+                t = strxor.strxor(t, cv)
                 plaintext += t
-                cv = Navicat11Crypto._XorBytes(cv, ciphertext[i:i + 8])
+                cv = strxor.strxor(cv, ciphertext[i:i + 8])
             
             if left_length != 0:
                 cv = self._Cipher.encrypt(cv)
-                plaintext += Navicat11Crypto._XorBytes(ciphertext[8 * full_round:], cv[:left_length])
+                plaintext += strxor.strxor(ciphertext[8 * full_round:], cv[:left_length])
             
-            return plaintext.decode('utf-8')
+            return plaintext.decode('ascii')
 
 NavicatCipher = Navicat11Crypto()
 ServersTypes = {
