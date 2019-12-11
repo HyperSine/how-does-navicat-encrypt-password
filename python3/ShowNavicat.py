@@ -123,6 +123,7 @@ for ServersTypeName, ServersRegistryPath in ServersTypes.items():
                     ServerSshUsername = None
                     ServerSshPassword = None
 
+                print(ServerName.center(50, '-'))
                 print('%-18s' % 'Host:', ServerHost)
                 print('%-18s' % 'Port:', ServerPort)
                 if ServerInitialDb != None:
