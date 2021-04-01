@@ -66,7 +66,7 @@ class Navicat12Crypto(Navicat11Crypto):
     def DecryptStringForNCX(self, s : str):
         cipher = AES.new(b'libcckeylibcckey', AES.MODE_CBC, iv = b'libcciv libcciv ')
         padded_plaintext = cipher.decrypt(bytes.fromhex(s))
-        return Padding.unpad(padded_plaintext, AES.block_size, style = 'pkcs7').decode('ascii')
+        return Padding.unpad(padded_plaintext, AES.block_size, style = 'pkcs7').decode('utf8')
 
 def TryDecrypt(cipher, s):
     try:
