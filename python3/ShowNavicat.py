@@ -1,68 +1,24 @@
 #!/usr/bin/env python3
 import platform
+import sys, winreg
+import utils.navicat_route_finder as nrf
+from utils.navicat_11_crypto import Navicat11Crypto
 
 if platform.system().lower() != 'windows':
     print('Please run this script in Windows.')
     exit(-1)
 
-import sys, winreg
-from Crypto.Hash import SHA1
-from Crypto.Cipher import AES, Blowfish
-from Crypto.Util import strxor
-
-#
-# Navicat12Crypto is not needed
-#
-class Navicat11Crypto:
-
-    def __init__(self, Key = b'3DC5CA39'):
-        self._Key = SHA1.new(Key).digest()
-        self._Cipher = Blowfish.new(self._Key, Blowfish.MODE_ECB)
-        self._IV = self._Cipher.encrypt(b'\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF')
-
-    def EncryptString(self, s : str):
-        if type(s) != str:
-            raise TypeError('Parameter s must be a str.')
-        else:
-            plaintext = s.encode('ascii')
-            ciphertext = b''
-            cv = self._IV
-            full_round, left_length = divmod(len(plaintext), 8)
-
-            for i in range(0, full_round * 8, 8):
-                t = strxor.strxor(plaintext[i:i + 8], cv)
-                t = self._Cipher.encrypt(t)
-                cv = strxor.strxor(cv, t)
-                ciphertext += t
-            
-            if left_length != 0:
-                cv = self._Cipher.encrypt(cv)
-                ciphertext += strxor.strxor(plaintext[8 * full_round:], cv[:left_length])
-
-            return ciphertext.hex().upper()
-
-    def DecryptString(self, s : str):
-        if type(s) != str:
-            raise TypeError('Parameter s must be str.')
-        else:
-            plaintext = b''
-            ciphertext = bytes.fromhex(s)
-            cv = self._IV
-            full_round, left_length = divmod(len(ciphertext), 8)
-
-            for i in range(0, full_round * 8, 8):
-                t = self._Cipher.decrypt(ciphertext[i:i + 8])
-                t = strxor.strxor(t, cv)
-                plaintext += t
-                cv = strxor.strxor(cv, ciphertext[i:i + 8])
-            
-            if left_length != 0:
-                cv = self._Cipher.encrypt(cv)
-                plaintext += strxor.strxor(ciphertext[8 * full_round:], cv[:left_length])
-            
-            return plaintext.decode('ascii')
+HIVE_VALUE = winreg.HKEY_CURRENT_USER
+KEY_PATH = 'Software\\PremiumSoft\\NavicatPremium'
 
 NavicatCipher = Navicat11Crypto()
+projects_found = nrf.find_projects_recursive(HIVE_VALUE, KEY_PATH)
+
+NewServersTypes = {
+    project['path'].split('\\')[9]: '\\'.join(project['path'].split('\\')[:-2])
+    for project in projects_found
+}
+
 ServersTypes = {
     'MySQL Server' : 'Software\\PremiumSoft\\Navicat\\Servers',
     'MariaDB Server' : 'Software\\PremiumSoft\\NavicatMARIADB\\Servers',
@@ -70,12 +26,13 @@ ServersTypes = {
     'MSSQL Server' : 'Software\\PremiumSoft\\NavicatMSSQL\\Servers',
     'OracleSQL Server' : 'Software\\PremiumSoft\\NavicatOra\\Servers',
     'PostgreSQL Server' : 'Software\\PremiumSoft\\NavicatPG\\Servers',
-    # 'SQLite Server' : 'Software\\PremiumSoft\\NavicatSQLite\\Servers'
 }
+
+ServersTypes.update(NewServersTypes)
 
 for ServersTypeName, ServersRegistryPath in ServersTypes.items():
     print('+--------------------------------------------------+')
-    print('|%s|' % ServersTypeName.center(50))
+    print(f'|{ServersTypeName.center(50)}|')
     print('+--------------------------------------------------+')
 
     try:
@@ -95,45 +52,40 @@ for ServersTypeName, ServersRegistryPath in ServersTypes.items():
             ServerRegistryKey = winreg.OpenKey(ServersRegistryKey, ServerName)
 
             try:
-                ServerHost = winreg.QueryValueEx(ServerRegistryKey, 'Host')[0]
-                ServerPort = winreg.QueryValueEx(ServerRegistryKey, 'Port')[0]
-                if ServersTypeName == 'OracleSQL Server':
-                    ServerInitialDb = winreg.QueryValueEx(ServerRegistryKey, 'InitialDatabase')[0]
-                else:
-                    ServerInitialDb = None
-                ServerUsername = winreg.QueryValueEx(ServerRegistryKey, 'Username')[0]
-                ServerPassword = winreg.QueryValueEx(ServerRegistryKey, 'Pwd')[0]
-                if len(ServerPassword) != 0:
+                ServerHost = nrf.find_value_if_exists(ServerRegistryKey, 'Host')
+                ServerPort = nrf.find_value_if_exists(ServerRegistryKey, 'Port')
+                ServerInitialDb = nrf.find_value_if_exists(ServerRegistryKey, 'InitialDatabase')
+                ServerUsername = nrf.find_value_if_exists(ServerRegistryKey, 'Username')
+                ServerPassword = nrf.find_value_if_exists(ServerRegistryKey, 'Pwd')
+
+                if ServerPassword is not None and len(ServerPassword) != 0:
                     ServerPassword = NavicatCipher.DecryptString(ServerPassword)
 
-                ServerUseSsh = winreg.QueryValueEx(ServerRegistryKey, 'UseSSH')[0]
-                if ServerUseSsh != 0:
-                    ServerSshHost = winreg.QueryValueEx(ServerRegistryKey, 'SSH_Host')[0]
-                    ServerSshPort = winreg.QueryValueEx(ServerRegistryKey, 'SSH_Port')[0]
-                    ServerSshUsername = winreg.QueryValueEx(ServerRegistryKey, 'SSH_Username')[0]
-                    ServerSshPassword = winreg.QueryValueEx(ServerRegistryKey, 'SSH_Password')[0]
-                    if len(ServerSshPassword) != 0:
-                        ServerSshPassword = NavicatCipher.DecryptString(ServerSshPassword)
-                else:
-                    ServerSshHost = None
-                    ServerSshPort = None
-                    ServerSshUsername = None
-                    ServerSshPassword = None
+                ServerUseSsh = nrf.find_value_if_exists(ServerRegistryKey, 'UseSSH')
+                ServerSshHost = nrf.find_value_if_exists(ServerRegistryKey, 'SSH_Host')
+                ServerSshPort = nrf.find_value_if_exists(ServerRegistryKey, 'SSH_Port')
+                ServerSshUsername = nrf.find_value_if_exists(ServerRegistryKey, 'SSH_Username')
+                ServerSshPassword = nrf.find_value_if_exists(ServerRegistryKey, 'SSH_Password')
+                if ServerSshPassword is not None and len(ServerSshPassword) != 0:
+                    ServerSshPassword = NavicatCipher.DecryptString(ServerSshPassword)
 
-                print(ServerName.center(50, '-'))
-                print('%-18s' % 'Host:', ServerHost)
-                print('%-18s' % 'Port:', ServerPort)
-                if ServerInitialDb != None:
-                    print('%-18s' % 'InitialDatabase:', ServerInitialDb)
-                print('%-18s' % 'Username:', ServerUsername)
-                print('%-18s' % 'Password:', ServerPassword)
+                print(ServerName.center(50, '*'))
+                print(f'{"Host:":<18} {ServerHost}')
+                print(f'{"Port:":<18} {ServerPort}')
+                if ServerInitialDb is not None:
+                    print(f'{"InitialDb:":<18} {ServerInitialDb}')
+                print(f'{"Username:":<18} {ServerUsername}')
+                print(f'{"Password:":<18} {ServerPassword}')
+
                 if ServerUseSsh:
-                    print('%-18s' % 'SSH Host:', ServerSshHost)
-                    print('%-18s' % 'SSH Port:', ServerSshPort)
-                    print('%-18s' % 'SSH Username:', ServerSshUsername)
-                    print('%-18s' % 'SSH Password:', ServerSshPassword)
-            except:
+                    print(f'{"SSH Host:":<18} {ServerSshHost}')
+                    print(f'{"SSH Port:":<18} {ServerSshPort}')
+                    print(f'{"SSH Username:":<18} {ServerSshUsername}')
+                    print(f'{"SSH Password:":<18} {ServerSshPassword}')
+
+            except (OSError, PermissionError, FileNotFoundError) as e:
                 print('[-] Failed to get info about server "%s". Server info may be corrupted.' % ServerName, file = sys.stderr)
+                print('[-] Error: %s' % e, file = sys.stderr)
 
             winreg.CloseKey(ServerRegistryKey)
             i += 1
@@ -142,6 +94,3 @@ for ServersTypeName, ServersRegistryPath in ServersTypes.items():
             print('No servers is found.')
             print('')
         continue
-
-    winreg.CloseKey(ServersRegistryKey)
-
